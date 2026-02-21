@@ -23,10 +23,10 @@ export default function AddRecommendationForm() {
       setGenre("");
       setLink("");
       setBlurb("");
-      alert("✅ Recommendation added successfully!");
+      alert("Recommendation added successfully!");
     } catch (err) {
       console.error(err);
-      alert("❌ Failed to add recommendation. Please try again.");
+      alert("Failed to add recommendation. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

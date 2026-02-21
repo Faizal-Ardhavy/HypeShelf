@@ -10,4 +10,8 @@ export default defineSchema({
     userId: v.string(),
     isStaffPick: v.boolean(),
   }),
+  users: defineTable({
+    userId: v.string(),
+    role: v.int64(), // e.g., 1 = "admin", 2 = "user", etc
+  }),
 });

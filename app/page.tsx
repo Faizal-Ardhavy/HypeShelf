@@ -1,37 +1,66 @@
 "use client";
 import AddRecommendationForm from "./add_feature/AddRecommendationForm";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import AuthButtons from "./clerk_auth/authButtons";
+import { useUser } from "@clerk/nextjs";
 
 export default function Home() {
+  const { isSignedIn } = useUser();
   const recommendations = useQuery(
     api.modules.recommendations.query.getRecommendations
   );
+  const deleteRecommendation = useMutation(
+    api.modules.recommendations.mutation.deleteRecommendation
+  );
+
+  const handleDelete = async (id: Id<"recommendations">) => {
+    if (confirm("Are you sure you want to delete this recommendation?")) {
+      try {
+        await deleteRecommendation({ id });
+      } catch (error) {
+        console.error(error);
+        alert("Failed to delete recommendation");
+      }
+    }
+  };
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-4xl font-bold text-gray-900">
-            📚 Recommendations Hub
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Discover and share amazing content recommendations
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">
+                Recommendations Hub
+              </h1>
+              <p className="mt-2 text-gray-600">
+                Discover and share amazing content recommendations
+              </p>
+            </div>
+            <AuthButtons />
+          </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-12">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-            ✨ Add New Recommendation
-          </h2>
-          <AddRecommendationForm />
-        </div>
+        {isSignedIn ? (
+          <div className="mb-12">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+              Add New Recommendation
+            </h2>
+            <AddRecommendationForm />
+          </div>
+        ) : (
+          <div className="mb-12 text-center py-12 bg-white rounded-lg shadow-sm">
+            <p className="text-gray-600 text-lg mb-4">Please sign in to add recommendations</p>
+          </div>
+        )}
 
         <div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-            🎯 All Recommendations
+            All Recommendations
           </h2>
           
           {recommendations === undefined ? (
@@ -41,7 +70,7 @@ export default function Home() {
             </div>
           ) : recommendations.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-              <p className="text-gray-500 text-lg">No recommendations yet. Be the first to add one! 🚀</p>
+              <p className="text-gray-500 text-lg">No recommendations yet. Be the first to add one!</p>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -57,7 +86,7 @@ export default function Home() {
                       </h3>
                       {rec.isStaffPick && (
                         <span className="ml-2 flex-shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-400 text-yellow-900">
-                          ⭐ Staff Pick
+                          Staff Pick
                         </span>
                       )}
                     </div>
@@ -67,7 +96,7 @@ export default function Home() {
                     <div className="space-y-3">
                       <div className="flex items-center">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                          🏷️ {rec.genre}
+                          {rec.genre}
                         </span>
                       </div>
 
@@ -84,7 +113,7 @@ export default function Home() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
                         >
-                          🔗 Visit Link
+                          Visit Link
                           <svg
                             className="ml-1 w-4 h-4"
                             fill="none"
@@ -100,6 +129,28 @@ export default function Home() {
                           </svg>
                         </a>
                       )}
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <button
+                        onClick={() => handleDelete(rec._id)}
+                        className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </div>
