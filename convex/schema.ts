@@ -8,10 +8,13 @@ export default defineSchema({
     link: v.string(),
     blurb: v.string(),
     userId: v.string(),
+    authorName: v.string(),
     isStaffPick: v.boolean(),
   }),
   users: defineTable({
     userId: v.string(),
-    role: v.int64(), // e.g., 1 = "admin", 2 = "user", etc
-  }),
+    name: v.string(),
+    email: v.string(),
+    role: v.string(),
+  }).index("by_userId", ["userId"]),
 });

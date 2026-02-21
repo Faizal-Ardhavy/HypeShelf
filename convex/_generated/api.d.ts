@@ -10,6 +10,8 @@
 
 import type * as modules_recommendations_mutation from "../modules/recommendations/mutation.js";
 import type * as modules_recommendations_query from "../modules/recommendations/query.js";
+import type * as modules_users_mutation from "../modules/users/mutation.js";
+import type * as modules_users_query from "../modules/users/query.js";
 
 import type {
   ApiFromModules,
@@ -20,6 +22,8 @@ import type {
 declare const fullApi: ApiFromModules<{
   "modules/recommendations/mutation": typeof modules_recommendations_mutation;
   "modules/recommendations/query": typeof modules_recommendations_query;
+  "modules/users/mutation": typeof modules_users_mutation;
+  "modules/users/query": typeof modules_users_query;
 }>;
 
 /**
