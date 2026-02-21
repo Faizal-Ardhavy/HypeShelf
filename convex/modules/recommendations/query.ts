@@ -12,6 +12,7 @@ export const getRecommendations = query({
       recommendations = recommendations.filter((q) => q.eq(q.field("genre"), args.genre));
     }
     
-    return await recommendations.collect();
+    const results = await recommendations.order("desc").collect();
+    return results;
   },
 });

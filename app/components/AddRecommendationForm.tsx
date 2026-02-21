@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { useMutation } from "convex/react";
+import { toast } from "sonner";
+import { GENRES, VALIDATION } from "@/convex/constants";
 
 export default function AddRecommendationForm() {
   const addRecommendation = useMutation(api.modules.recommendations.mutation.addRecommendation);
@@ -15,18 +17,63 @@ export default function AddRecommendationForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Client-side validation
+    if (title.length > VALIDATION.TITLE_MAX_LENGTH) {
+      toast.error(`Title must be ${VALIDATION.TITLE_MAX_LENGTH} characters or less`);
+      return;
+    }
+    
+    if (blurb.length > VALIDATION.BLURB_MAX_LENGTH) {
+      toast.error(`Description must be ${VALIDATION.BLURB_MAX_LENGTH} characters or less`);
+      return;
+    }
+
+    if (link && link.length > VALIDATION.LINK_MAX_LENGTH) {
+      toast.error(`Link must be ${VALIDATION.LINK_MAX_LENGTH} characters or less`);
+      return;
+    }
+    
     setIsSubmitting(true);
     
+    // Set timeout for the operation (30 seconds)
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Operation timed out. Please try again.")), 30000)
+    );
+    
     try {
-      await addRecommendation({ title, genre, link, blurb });
+      await Promise.race([
+        addRecommendation({ 
+          title: title.trim(), 
+          genre, 
+          link: link.trim(),
+          blurb: blurb.trim() 
+        }),
+        timeoutPromise
+      ]);
+      
+      // Clear form
       setTitle("");
       setGenre("");
       setLink("");
       setBlurb("");
-      alert("Recommendation added successfully!");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to add recommendation. Please try again.");
+      
+      toast.success("Recommendation added successfully!");
+    } catch (error: unknown) {
+      console.error(error);
+      let errorMessage = "Failed to add recommendation. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("timeout") || error.message.includes("timed out")) {
+          errorMessage = "Operation timed out. The server might be busy. Please try again.";
+        } else if (error.message.includes("network") || error.message.includes("Failed to fetch")) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -36,9 +83,14 @@ export default function AddRecommendationForm() {
     <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 border border-gray-100">
       <div className="grid gap-6 md:grid-cols-2">
         <div className="md:col-span-2">
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-            Title <span className="text-red-500">*</span>
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+              Title <span className="text-red-500">*</span>
+            </label>
+            <span className={`text-xs ${title.length > VALIDATION.TITLE_MAX_LENGTH ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+              {title.length}/{VALIDATION.TITLE_MAX_LENGTH}
+            </span>
+          </div>
           <input
             id="title"
             type="text"
@@ -46,6 +98,7 @@ export default function AddRecommendationForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+            maxLength={VALIDATION.TITLE_MAX_LENGTH}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
           />
         </div>
@@ -54,15 +107,20 @@ export default function AddRecommendationForm() {
           <label htmlFor="genre" className="block text-sm font-medium text-gray-700 mb-2">
             Genre <span className="text-red-500">*</span>
           </label>
-          <input
+          <select
             id="genre"
-            type="text"
-            placeholder="e.g., Fiction, Technology, Music"
             value={genre}
             onChange={(e) => setGenre(e.target.value)}
             required
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-          />
+          >
+            <option value="">Select a genre...</option>
+            {GENRES.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
@@ -80,15 +138,21 @@ export default function AddRecommendationForm() {
         </div>
 
         <div className="md:col-span-2">
-          <label htmlFor="blurb" className="block text-sm font-medium text-gray-700 mb-2">
-            Short Description (Optional)
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="blurb" className="block text-sm font-medium text-gray-700">
+              Short Description (Optional)
+            </label>
+            <span className={`text-xs ${blurb.length > VALIDATION.BLURB_MAX_LENGTH ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+              {blurb.length}/{VALIDATION.BLURB_MAX_LENGTH}
+            </span>
+          </div>
           <textarea
             id="blurb"
             placeholder="A brief description of why you recommend this..."
             value={blurb}
             onChange={(e) => setBlurb(e.target.value)}
             rows={3}
+            maxLength={VALIDATION.BLURB_MAX_LENGTH}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
           />
         </div>
